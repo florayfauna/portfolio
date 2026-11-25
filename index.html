@@ -2594,6 +2594,7 @@ footer{background:#fff;color:var(--ink-soft)!important;font-family:var(--f-body)
           <textarea id="cf-message" name="Mensaje" rows="4" required></textarea>
 
           <button type="submit" class="btn-send">Enviar mensaje</button>
+          <p class="form-status" id="cf-status" role="status" aria-live="polite" hidden></p>
         </form>
       </div>
     </div>
@@ -2967,4 +2968,39 @@ footer{background:#fff;color:var(--ink-soft)!important;font-family:var(--f-body)
 
 
 
+<style>
+/* ── Mensaje de gracias del formulario ── */
+.form-status{margin:.4rem 0 0;padding:1rem 1.2rem;border-radius:16px;font-family:var(--f-body);font-size:1rem;line-height:1.5;text-align:center;color:var(--ink)}
+.form-status.is-ok{background:var(--lemon-2,#fbf4bf);border:1px solid var(--gold,#e0b400)}
+.form-status.is-error{background:#fdecea;border:1px solid #e57373}
+.form-status strong{display:block;font-size:1.15rem;margin-bottom:.15rem}
+.btn-send[disabled]{opacity:.6;cursor:wait}
+</style>
+<script>
+/* Envío del formulario sin salir de la página: muestra "gracias" en el mismo lugar */
+(function(){
+  var form=document.querySelector('.contact-form'); if(!form) return;
+  var status=document.getElementById('cf-status');
+  var btn=form.querySelector('.btn-send');
+  var label=btn.textContent;
+  function show(cls,html){status.className='form-status '+cls;status.innerHTML=html;status.hidden=false;}
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    if(form.querySelector('[name="_honey"]').value) return; // anti-spam
+    btn.disabled=true; btn.textContent='Enviando…'; status.hidden=true;
+    var url=form.action.replace('formsubmit.co/','formsubmit.co/ajax/');
+    fetch(url,{method:'POST',headers:{'Accept':'application/json'},body:new FormData(form)})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(d){
+        if(r.ok && d.success!=='false' && d.success!==false){
+          form.reset();
+          show('is-ok','<strong>¡Gracias!</strong>Recibí tu mensaje, me contactaré a la brevedad.');
+        } else { throw new Error(d.message||'error'); }
+      });})
+      .catch(function(){
+        show('is-error','No se pudo enviar. Probá de nuevo o escribime por LinkedIn.');
+      })
+      .then(function(){btn.disabled=false;btn.textContent=label;});
+  });
+})();
+</script>
 </body></html>
